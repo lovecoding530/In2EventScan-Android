@@ -1,109 +1,100 @@
 package com.in2event.in2eventscan.fragments;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
+import com.google.zxing.Result;
 import com.in2event.in2eventscan.R;
+import com.in2event.in2eventscan.activities.MainActivity;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link CodeSannerFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link CodeSannerFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class CodeSannerFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+public class CodeSannerFragment extends Fragment implements ZXingScannerView.ResultHandler {
+    private static final int REQUEST_CAMERA_PERMISSION = 1;
 
-    private OnFragmentInteractionListener mListener;
+    private ZXingScannerView mScannerView;
+
+    private Context context;
+
+    private OnScanCodeListener mListener;
 
     public CodeSannerFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment CodeSannerFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static CodeSannerFragment newInstance(String param1, String param2) {
+    public static CodeSannerFragment newInstance(Context context) {
         CodeSannerFragment fragment = new CodeSannerFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
+        fragment.context = context;
+        fragment.mListener = (OnScanCodeListener) context;
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_code_sanner, container, false);
-    }
+        View view = inflater.inflate(R.layout.fragment_code_sanner, container, false);
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
         }
+
+        ViewGroup contentFrame = view.findViewById(R.id.content_frame);
+        mScannerView = new ZXingScannerView(context);
+        contentFrame.addView(mScannerView);
+
+        return view;
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        mScannerView.setResultHandler(this);
+        mScannerView.startCamera();
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
+    public void onPause() {
+        super.onPause();
+        mScannerView.stopCamera();
     }
 
     @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
+    public void handleResult(Result rawResult) {
+        mListener.onScanCode(rawResult.getText());
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_CAMERA_PERMISSION:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mScannerView.startCamera();
+                } else {
+                    Toast.makeText(context, "Please grant camera permission to use the QR Scanner", Toast.LENGTH_SHORT).show();
+                }
+        }
+    }
+
+    public interface OnScanCodeListener {
         // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        void onScanCode(String code);
     }
 }

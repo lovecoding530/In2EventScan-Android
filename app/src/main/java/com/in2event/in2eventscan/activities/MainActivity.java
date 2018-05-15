@@ -1,39 +1,67 @@
-package com.in2event.in2eventscan;
+package com.in2event.in2eventscan.activities;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.JsonRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.zxing.Result;
+import com.in2event.in2eventscan.R;
+import com.in2event.in2eventscan.fragments.CodeSannerFragment;
+import com.in2event.in2eventscan.services.SyncService;
+import com.in2event.in2eventscan.utils.Contents;
+import com.in2event.in2eventscan.utils.JsonHelper;
+import com.in2event.in2eventscan.utils.MyHelper;
+import com.in2event.in2eventscan.utils.MyPreference;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, ZXingScannerView.ResultHandler {
+        implements NavigationView.OnNavigationItemSelectedListener, CodeSannerFragment.OnScanCodeListener{
 
-    private static final int REQUEST_CAMERA_PERMISSION = 1;
+    private ConnectivityReceiver connectivityReceiver;
+    private MyPreference myPref;
+    private ProgressBar progressBar;
 
-    private ZXingScannerView mScannerView;
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,59 +78,14 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-        }
-
-        ViewGroup contentFrame = findViewById(R.id.content_frame);
-        mScannerView = new ZXingScannerView(this);
-        contentFrame.addView(mScannerView);
-
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mScannerView.setResultHandler(this);
-        mScannerView.startCamera();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mScannerView.stopCamera();
-    }
-
-    @Override
-    public void handleResult(Result rawResult) {
-        Toast.makeText(this, "Contents = " + rawResult.getText() +
-                ", Format = " + rawResult.getBarcodeFormat().toString(), Toast.LENGTH_SHORT).show();
-
-        // Note:
-        // * Wait 2 seconds to resume the preview.
-        // * On older devices continuously stopping and resuming camera preview can result in freezing the app.
-        // * I don't know why this is the case but I don't have the time to figure out.
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mScannerView.resumeCameraPreview(MainActivity.this);
-            }
-        }, 2000);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case REQUEST_CAMERA_PERMISSION:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mScannerView.startCamera();
-                } else {
-                    Toast.makeText(this, "Please grant camera permission to use the QR Scanner", Toast.LENGTH_SHORT).show();
-                }
-        }
+        myPref = new MyPreference(this);
+        
+        progressBar = findViewById(R.id.progressBar);
+        
+        CodeSannerFragment sannerFragment = CodeSannerFragment.newInstance(this);
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.scanner_fragment_container, sannerFragment);
+        fragmentTransaction.commit();
     }
 
     @Override
@@ -154,5 +137,112 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onScanCode(final String code) {
+        if(MyHelper.isConnectedInternet(this)){
+            progressBar.setVisibility(View.VISIBLE);
+
+            JSONObject params = new JSONObject();
+            try {
+                params.put("barcode", code);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            RequestQueue queue = Volley.newRequestQueue(this);
+            JsonRequest jsonRequest = new JsonObjectRequest(Request.Method.POST, Contents.API_ALL_BARCODES, params, new Response.Listener<JSONObject>(){
+                @Override
+                public void onResponse(JSONObject response) {
+                    progressBar.setVisibility(View.GONE);
+                    Contents.scannedBarcodes.add(code);
+
+                    boolean success = response.optBoolean("success");
+                    String message = response.optString("message");
+                    String customer = response.optString("customer");
+                    String product = response.optString("product");
+                    gotoResultActivity(success, message, customer, product);
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    progressBar.setVisibility(View.GONE);
+                    gotoResultActivity(false, "An error happens", "", "");
+                }
+            }){
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    HashMap<String, String> headers = new HashMap<>();
+                    headers.put("X-ACCESS-TOKEN", myPref.getAccessToken());
+                    return headers;
+                }
+            };
+
+            queue.add(jsonRequest);
+        }else{
+            if (Contents.scannedBarcodes.contains(code)){
+                gotoResultActivity(false, "Barcode already scanned", "", "");
+            }else {
+                int indexOfCached = JsonHelper.indexOf(Contents.cachedBarcodes, "barcode", code);
+                if(indexOfCached >= 0){
+                    myPref.addBarcodeToQueue(code);
+
+                    JSONObject jsonObject = (JSONObject) Contents.cachedBarcodes.opt(indexOfCached);
+                    Contents.cachedBarcodes = JsonHelper.remove(Contents.cachedBarcodes, indexOfCached);
+
+                    String message = jsonObject.optString("message");
+                    String customer = jsonObject.optString("customer");
+                    String product = jsonObject.optString("product");
+
+                    gotoResultActivity(true, "Successfully Scanned", customer, product);
+                }else {
+                    gotoResultActivity(false, "Barcode not found", "", "");
+                }
+            }
+        }
+    }
+
+    private void gotoResultActivity(boolean success, String message, String customer, String product){
+        Intent intent = new Intent(MainActivity.this, ScanResultActivity.class);
+        intent.putExtra("success", success);
+        intent.putExtra("message", message);
+        intent.putExtra("customer", customer);
+        intent.putExtra("product", product);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerConnectivityAction();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(connectivityReceiver);
+    }
+
+    private void registerConnectivityAction(){
+        connectivityReceiver = new ConnectivityReceiver();
+        IntentFilter intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(connectivityReceiver, intentFilter);
+    }
+
+    private class ConnectivityReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean isConnected = MyHelper.isConnectedInternet(MainActivity.this);
+            Log.d("Kangtle", "network is connected " + isConnected);
+            if(MyHelper.isConnectedInternet(MainActivity.this)){
+                Intent syncServiceIntent = new Intent(context, SyncService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(syncServiceIntent);
+                }else{
+                    context.startService(syncServiceIntent);
+                }
+            }
+        }
     }
 }
