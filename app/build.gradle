@@ -36,5 +36,6 @@ dependencies {
         exclude group: "com.android.support"
     }
     annotationProcessor 'com.github.bumptech.glide:compiler:4.5.0'
+    implementation 'de.hdodenhof:circleimageview:2.2.0'
 
 }

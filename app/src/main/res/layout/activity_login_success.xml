@@ -6,11 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".activities.LoginSuccessActivity">
 
-    <ImageView
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/eventLogoImageView"
         android:layout_width="128dp"
         android:layout_height="128dp"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="80dp"
+        app:civ_border_width="1dp"
+        app:civ_border_color="#0000"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"

@@ -12,9 +12,11 @@ import com.bumptech.glide.Glide;
 import com.in2event.in2eventscan.R;
 import com.in2event.in2eventscan.utils.MyPreference;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class LoginSuccessActivity extends AppCompatActivity {
 
-    private ImageView eventLogoImageView;
+    private CircleImageView eventLogoImageView;
     private TextView eventNameLabel;
     private TextView eventCityAndDatesLabel;
     private Button startScanningButton;
