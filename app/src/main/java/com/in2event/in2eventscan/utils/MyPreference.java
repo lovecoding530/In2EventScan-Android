@@ -6,6 +6,7 @@ import android.preference.PreferenceManager;
 
 import com.google.gson.Gson;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -85,5 +86,25 @@ public class MyPreference {
 
     public Set<String> getQueuedBarcodes(){
         return configSP.getStringSet("queued_barcodes", new HashSet<String>());
+    }
+
+    public JSONArray getCachedBarcodes(){
+        JSONArray barcodesArray;
+        String jsonStr = configSP.getString("cached_barcodes_str", null);
+        if (jsonStr == null){
+            barcodesArray = new JSONArray();
+        }else{
+            try {
+                barcodesArray = new JSONArray(jsonStr);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                barcodesArray = new JSONArray();
+            }
+        }
+        return barcodesArray;
+    }
+
+    public void setCachedBarcodes(JSONArray barcodes){
+        configEditor.putString("cached_barcodes_str", barcodes.toString()).commit();
     }
 }

@@ -79,10 +79,9 @@ public class LoginActivity extends AppCompatActivity implements CodeSannerFragme
                 myPref.setEventDates(response.optString(Contents.JsonEvent.EVENT_DATES));
                 myPref.setEventCity(response.optString(Contents.JsonEvent.EVENT_CITY));
 
-                updateBarcodesHandler.post(updateBarcodesRunnable);
-
                 Intent intent = new Intent(LoginActivity.this, LoginSuccessActivity.class);
                 startActivity(intent);
+                finish();
             }
         }, new Response.ErrorListener() {
             @Override
@@ -101,39 +100,5 @@ public class LoginActivity extends AppCompatActivity implements CodeSannerFragme
         };
 
         queue.add(jsonRequest);
-    }
-
-    private Handler updateBarcodesHandler = new Handler();
-    private Runnable updateBarcodesRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateBarcodesHandler.postDelayed(updateBarcodesRunnable, 5 * 60 * 1000);
-            getAllBarcodes();
-        }
-    };
-
-    public void getAllBarcodes(){
-        RequestQueue queue = Volley.newRequestQueue(this);
-        JsonArrayRequest arrayRequest = new JsonArrayRequest(Contents.API_ALL_BARCODES, new Response.Listener<JSONArray>() {
-            @Override
-            public void onResponse(JSONArray response) {
-                Log.d("Kangtle", response.toString());
-                Contents.cachedBarcodes = response;
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d("Kangtle", "All bar codes onErrorResponse");
-            }
-        }){
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<>();
-                Log.d("Kangtle", "saved token " + myPref.getAccessToken());
-                headers.put("X-ACCESS-TOKEN", myPref.getAccessToken());
-                return headers;
-            }
-        };
-        queue.add(arrayRequest);
     }
 }

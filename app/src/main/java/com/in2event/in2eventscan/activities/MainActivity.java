@@ -3,6 +3,7 @@ package com.in2event.in2eventscan.activities;
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -34,6 +35,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.Volley;
@@ -41,6 +43,7 @@ import com.google.zxing.Result;
 import com.in2event.in2eventscan.R;
 import com.in2event.in2eventscan.fragments.CodeSannerFragment;
 import com.in2event.in2eventscan.services.SyncService;
+import com.in2event.in2eventscan.utils.AlertHelper;
 import com.in2event.in2eventscan.utils.Contents;
 import com.in2event.in2eventscan.utils.JsonHelper;
 import com.in2event.in2eventscan.utils.MyHelper;
@@ -86,6 +89,9 @@ public class MainActivity extends AppCompatActivity
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.scanner_fragment_container, sannerFragment);
         fragmentTransaction.commit();
+
+        Contents.cachedBarcodes = myPref.getCachedBarcodes();
+        updateBarcodesHandler.post(updateBarcodesRunnable);
     }
 
     @Override
@@ -129,7 +135,20 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_scan) {
             // Handle the camera action
         } else if (id == R.id.nav_logout) {
-
+            AlertHelper.question(this, "In2EventScan", "Are you sure to log out?", "OK", "Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    myPref.setAccessToken(null);
+                    finish();
+                    Intent intent = new Intent(MainActivity.this, StartActivity.class);
+                    startActivity(intent);
+                }
+            }, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
         }else{
 
         }
@@ -228,6 +247,41 @@ public class MainActivity extends AppCompatActivity
         connectivityReceiver = new ConnectivityReceiver();
         IntentFilter intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(connectivityReceiver, intentFilter);
+    }
+
+    private Handler updateBarcodesHandler = new Handler();
+    private Runnable updateBarcodesRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateBarcodesHandler.postDelayed(updateBarcodesRunnable, 5 * 60 * 1000);
+            getAllBarcodes();
+        }
+    };
+
+    public void getAllBarcodes(){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        JsonArrayRequest arrayRequest = new JsonArrayRequest(Contents.API_ALL_BARCODES, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                Log.d("Kangtle", response.toString());
+                Contents.cachedBarcodes = response;
+                myPref.setCachedBarcodes(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("Kangtle", "All bar codes onErrorResponse");
+            }
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<>();
+                Log.d("Kangtle", "saved token " + myPref.getAccessToken());
+                headers.put("X-ACCESS-TOKEN", myPref.getAccessToken());
+                return headers;
+            }
+        };
+        queue.add(arrayRequest);
     }
 
     private class ConnectivityReceiver extends BroadcastReceiver {
