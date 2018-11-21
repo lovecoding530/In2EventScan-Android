@@ -1,7 +1,9 @@
 package com.in2event.in2eventscan.services;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
@@ -28,6 +30,14 @@ public class SyncService extends Service {
     private int taskCount = 0;
 
     public SyncService() {
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        if (Build.VERSION.SDK_INT >= 26) {
+            startForeground(1, new Notification.Builder(this).build());
+        }
     }
 
     @Override

@@ -36,18 +36,27 @@ public class ScanResultActivity extends AppCompatActivity {
             }
         });
 
-        boolean success = getIntent().getBooleanExtra("success", false);
+        String response = getIntent().getStringExtra("response");
         String message = getIntent().getStringExtra("message");
         String customer = getIntent().getStringExtra("customer");
         String product = getIntent().getStringExtra("product");
         ConstraintLayout layout = findViewById(R.id.container);
 
-        if (success){
-            layout.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_success));
-            resultImageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_success));
-        }else{
-            layout.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_failed));
-            resultImageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_failed));
+        switch (response) {
+            case "SUCCESS":
+                layout.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_success));
+                resultImageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_success));
+                break;
+            case "WARNING":
+                layout.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_warning));
+                resultImageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_warning));
+                break;
+            case "ERROR":
+                layout.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_failed));
+                resultImageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_failed));
+                break;
+            default:
+                break;
         }
 
         messageLabel.setText(message);

@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -94,7 +95,9 @@ public class LoginActivity extends AppCompatActivity implements CodeSannerFragme
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 HashMap<String, String> headers = new HashMap<>();
+                Locale current = getResources().getConfiguration().locale;
                 headers.put("X-ACCESS-TOKEN", code);
+                headers.put("LANG", current.getLanguage());
                 return headers;
             }
         };

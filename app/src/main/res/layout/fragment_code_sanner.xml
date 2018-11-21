@@ -25,7 +25,7 @@
         android:layout_marginBottom="20dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:text="Make sure the entire QR code fits inside the boxed area"
+        android:text="@string/make_sure_the_entire_qr_code_fits_inside_the_boxed_area"
         android:textAlignment="center"
         android:textColor="#ffffff"
         android:textSize="20sp" />

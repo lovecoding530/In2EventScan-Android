@@ -27,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -54,6 +55,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
@@ -64,12 +66,15 @@ public class MainActivity extends AppCompatActivity
     private ConnectivityReceiver connectivityReceiver;
     private MyPreference myPref;
     private ProgressBar progressBar;
+    private Toolbar toolbar;
+    private LinearLayout conectoinLostView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
+        conectoinLostView = findViewById(R.id.connection_lost);
         setSupportActionBar(toolbar);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -177,29 +182,33 @@ public class MainActivity extends AppCompatActivity
                     progressBar.setVisibility(View.GONE);
                     Contents.scannedBarcodes.add(code);
 
-                    boolean success = response.optBoolean("success");
+                    String resp = response.optString("response");
                     String message = response.optString("message");
                     String customer = response.optString("customer");
                     String product = response.optString("product");
-                    gotoResultActivity(success, message, customer, product);
+                    gotoResultActivity(resp, message, customer, product);
                 }
             }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     progressBar.setVisibility(View.GONE);
-                    gotoResultActivity(false, "An error happens", "", "");
+                    gotoResultActivity("ERROR", "An error happens", "", "");
                 }
             }){
                 @Override
                 public Map<String, String> getHeaders() throws AuthFailureError {
                     HashMap<String, String> headers = new HashMap<>();
+                    Locale current = getResources().getConfiguration().locale;
                     headers.put("X-ACCESS-TOKEN", myPref.getAccessToken());
+                    headers.put("LANG", current.getLanguage());
                     return headers;
                 }
             };
 
             queue.add(jsonRequest);
-        }else{
+        }
+        /*
+        else{
             if (Contents.scannedBarcodes.contains(code)){
                 gotoResultActivity(false, "Barcode already scanned", "", "");
             }else {
@@ -220,11 +229,12 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
+        */
     }
 
-    private void gotoResultActivity(boolean success, String message, String customer, String product){
+    private void gotoResultActivity(String response, String message, String customer, String product){
         Intent intent = new Intent(MainActivity.this, ScanResultActivity.class);
-        intent.putExtra("success", success);
+        intent.putExtra("response", response);
         intent.putExtra("message", message);
         intent.putExtra("customer", customer);
         intent.putExtra("product", product);
@@ -296,6 +306,11 @@ public class MainActivity extends AppCompatActivity
                 }else{
                     context.startService(syncServiceIntent);
                 }
+                MainActivity.this.toolbar.setVisibility(View.VISIBLE);
+                MainActivity.this.conectoinLostView.setVisibility(View.GONE);
+            }else{
+                MainActivity.this.toolbar.setVisibility(View.GONE);
+                MainActivity.this.conectoinLostView.setVisibility(View.VISIBLE);
             }
         }
     }
