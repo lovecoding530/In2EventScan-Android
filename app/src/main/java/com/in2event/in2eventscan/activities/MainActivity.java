@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     progressBar.setVisibility(View.GONE);
-                    gotoResultActivity("ERROR", "An error happens", "", "");
+                    gotoResultActivity("ERROR", getString(R.string.an_error_occurred), "", "");
                 }
             }){
                 @Override

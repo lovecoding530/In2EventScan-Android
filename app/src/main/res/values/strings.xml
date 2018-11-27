@@ -21,4 +21,6 @@
     <string name="log_out">Log out</string>
     <string name="make_sure_the_entire_qr_code_fits_inside_the_boxed_area">Make sure the entire QR code fits inside the boxed area</string>
     <string name="connection_lost">Connection lost...</string>
+    <string name="continue_scanning">Continue Scanning</string>
+    <string name="an_error_occurred">An Error Occurred</string>
 </resources>

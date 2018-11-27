@@ -10,14 +10,18 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="scan_login_code">Scan Login Code</string>
-    <string name="to_login_scan_the_qr_code_provided_by_your_provider">To login scan the QR code provided by your provider</string>
-    <string name="failed_to_login">Failed to login</string>
-    <string name="try_again">Try Again</string>
+    <string name="scan_login_code">Scan login code</string>
+    <string name="to_login_scan_the_qr_code_provided_by_your_provider">Om in te loggen, scan de verstrekte QR code</string>
+    <string name="failed_to_login">Inloggen niet gelukt</string>
+    <string name="try_again">Probeer opnieuw</string>
     <string name="the_flying_dutch_2018">The Flying Dutch 2018</string>
-    <string name="start_scanning">Start Scanning</string>
+    <string name="start_scanning">Scannen starten</string>
     <string name="success">Success</string>
-    <string name="scan_code">Scan Code</string>
-    <string name="log_out">Log out</string>
+    <string name="scan_code">Scan code</string>
+    <string name="log_out">Uitloggen</string>
     <string name="make_sure_the_entire_qr_code_fits_inside_the_boxed_area">Make sure the entire QR code fits inside the boxed area</string>
+    <string name="connection_lost">Geen verbinding...</string>
+    <string name="continue_scanning">Doorgaan met scannen</string>
+    <string name="an_error_occurred">Er is iets fout gegaan</string>
+
 </resources>
