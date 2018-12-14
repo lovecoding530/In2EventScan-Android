@@ -19,7 +19,7 @@
     <string name="success">Success</string>
     <string name="scan_code">Scan code</string>
     <string name="log_out">Uitloggen</string>
-    <string name="make_sure_the_entire_qr_code_fits_inside_the_boxed_area">Make sure the entire QR code fits inside the boxed area</string>
+    <string name="make_sure_the_entire_qr_code_fits_inside_the_boxed_area">Zorg ervoor dat de QR Code binnen het kader past</string>
     <string name="connection_lost">Geen verbinding...</string>
     <string name="continue_scanning">Doorgaan met scannen</string>
     <string name="an_error_occurred">Er is iets fout gegaan</string>
