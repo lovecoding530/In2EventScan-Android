@@ -18,8 +18,8 @@ import java.util.Map;
 
 public class Contents {
 
-    public static String API_ROOT = "http://workers.hetsysteem.com/api/1"; //domo
-//    public static String API_ROOT = "http://api.in2event.com/api/1"; //live
+//    public static String API_ROOT = "http://workers.hetsysteem.com/api/1"; //domo
+    public static String API_ROOT = "http://api.in2event.com/api/1"; //live
     public static String API_AUTHORIZE = API_ROOT + "/authorize";
     public static String API_ALL_BARCODES= API_ROOT + "/barcodes";
 
